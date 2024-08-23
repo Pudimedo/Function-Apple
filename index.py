@@ -1,41 +1,44 @@
-import pygame, pymunk
+import pygame
 from sys import exit
 
 width = 800
 height = 800
 
-def create_ball(space):
-    body = pymunk.Body(1,100,body_type = pymunk.Body.DYNAMIC)
-    body.position = (400, 0)
-    shape = pymunk.Circle(body,80)
-    space.add(body,shape)
-    return shape
+def format_func(func : list) -> str:
 
-def draw_ball(balls):
-    for ball in balls:
-        pos_x = int(ball.body.position.x)
-        pos_y = int(ball.body.position.y)
-        pygame.draw.circle(screen, (0,0,0), (pos_x,pos_y),80)
+    parameter = func[0][func[0].rfind('(') + 1]
+    formated_func = '' #funcao formatada
+    for i, letter in enumerate(func[1]):
+
+        if letter == parameter and func[1][i - 1].isnumeric():
+            formated_func += '*'
+        
+        formated_func += letter
+    
+    return formated_func
+
+#region config
 
 pygame.init()
 
 clock = pygame.time.Clock()
 
-space = pymunk.Space()
-space.gravity = (0,200)
-balls = []
-balls.append(create_ball(space))
-
 screen = pygame.display.set_mode((width, height))
-
 
 base_font = pygame.font.Font(None,30)
 user_text = ''
+warning_text = ''
+enter_pressed = False
 
 input_rect = pygame.Rect(5,5,140,30)
 color = pygame.Color("lightskyblue3")
 
+#endregion
+
 while True:
+    
+    #region events
+
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
@@ -43,24 +46,36 @@ while True:
             exit()
         
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                user_text = user_text[:-1]
-            else:
 
-                user_text += event.unicode
+            if not enter_pressed:
+                if event.key == pygame.K_BACKSPACE:
+                    user_text = user_text[:-1]
 
+                elif event.key == pygame.K_RETURN:
+                    if user_text != '':
+                        enter_pressed = True
+                        warning_text = 'Clique R para reiniciar'
+
+                else:
+                    user_text += event.unicode
+
+            elif event.key == pygame.K_r:
+                user_text = ''
+                warning_text = ''
+                enter_pressed = False
+    #endregion
+    
     screen.fill("white")    
-
-    draw_ball(balls)
-    space.step(1/50)
 
     pygame.draw.rect(screen,color,input_rect, 2)
 
     text_surface = base_font.render(user_text,True,(0,0,0))
+    warning_surface = base_font.render(warning_text,True, (0,0,0))
+
     screen.blit(text_surface, (input_rect.x + 5, input_rect.y + 5))
+    screen.blit(warning_surface, (input_rect.w + 10, input_rect.y + 5))
 
     input_rect.w = max(100, text_surface.get_width() + 10)
 
 
     pygame.display.update()
-    clock.tick(120)
